@@ -23,7 +23,9 @@ export default function PreviewCard({ url }: PreviewCardProps) {
   useEffect(() => {
     const fetchPreview = async () => {
       try {
-        const response = await fetch(`/api/preview?url=${encodeURIComponent(url)}`)
+        // 캐시 버스터 추가하여 새로운 이미지 강제 로드
+        const cacheBuster = Date.now()
+        const response = await fetch(`/api/preview?url=${encodeURIComponent(url)}&t=${cacheBuster}`)
         const data = await response.json()
         console.log('Preview data received:', data)
         setPreview(data)
@@ -81,6 +83,8 @@ export default function PreviewCard({ url }: PreviewCardProps) {
             onError={handleImageError}
             unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            // 캐시 버스터로 이미지 새로고침 강제
+            key={preview.image}
           />
         </div>
       ) : (

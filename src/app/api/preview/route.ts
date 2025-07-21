@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
                        $('meta[name="description"]').attr('content') ||
                        'No description available'
 
-    // 더 광범위하게 이미지 검색
+    // 고품질 이미지만 검색 (favicon 제외)
     let originalImage = $('meta[property="og:image"]').attr('content') ||
                        $('meta[property="og:image:url"]').attr('content') ||
                        $('meta[property="og:image:secure_url"]').attr('content') ||
@@ -68,9 +68,8 @@ export async function GET(request: NextRequest) {
                        $('meta[property="twitter:image"]').attr('content') ||
                        $('meta[name="thumbnail"]').attr('content') ||
                        $('link[rel="image_src"]').attr('href') ||
-                       $('link[rel="apple-touch-icon"]').attr('href') ||
-                       $('link[rel="icon"]').attr('href') ||
-                       $('img').first().attr('src') ||
+                       // 첫 번째 큰 이미지만 찾기 (favicon 제외)
+                       $('img[src]:not([src*="favicon"]):not([src*="icon"])').first().attr('src') ||
                        ''
 
     // Handle relative URLs
@@ -87,8 +86,8 @@ export async function GET(request: NextRequest) {
 
     let image = null
     
-    // 원본 이미지가 있으면 프록시를 통해 제공
-    if (originalImage) {
+    // 원본 이미지가 있고 favicon이 아닌 경우에만 사용
+    if (originalImage && !originalImage.includes('favicon')) {
       const proxyServices = [
         // 더 안정적인 이미지 프록시들
         `https://images.weserv.nl/?url=${encodeURIComponent(originalImage)}&w=400&h=200&fit=cover&output=png`,
@@ -114,11 +113,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 원본 이미지가 없거나 모든 프록시가 실패한 경우 스크린샷 서비스 사용
+    // 원본 이미지가 없거나 favicon만 있는 경우 스크린샷 우선 사용
     if (!image) {
       const domain = new URL(url).hostname
       
-      // 더 안정적인 스크린샷 서비스들을 우선 시도
+      // 스크린샷 서비스들을 우선적으로 시도
       const screenshotServices = [
         // 무료 스크린샷 서비스들
         `https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?${url}`,
@@ -142,7 +141,40 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 모든 서비스가 실패하면 SVG 폴백 사용
+    // 스크린샷도 실패하면 favicon 시도 (최후의 수단)
+    if (!image) {
+      const faviconImage = $('link[rel="apple-touch-icon"]').attr('href') ||
+                          $('link[rel="icon"]').attr('href') ||
+                          $('link[rel="shortcut icon"]').attr('href') ||
+                          '/favicon.ico'
+      
+      if (faviconImage) {
+        let fullFaviconUrl = faviconImage
+        if (!faviconImage.startsWith('http')) {
+          try {
+            const baseUrl = new URL(url).origin
+            fullFaviconUrl = new URL(faviconImage, baseUrl).href
+          } catch (e) {
+            fullFaviconUrl = ''
+          }
+        }
+        
+        if (fullFaviconUrl) {
+          try {
+            const faviconProxy = `https://images.weserv.nl/?url=${encodeURIComponent(fullFaviconUrl)}&w=400&h=200&fit=cover&output=png`
+            const isValid = await isValidImageUrl(faviconProxy)
+            if (isValid) {
+              image = faviconProxy
+              console.log('🎯 Using favicon as last resort:', faviconProxy)
+            }
+          } catch (error) {
+            console.log('❌ Favicon proxy failed:', error)
+          }
+        }
+      }
+    }
+
+    // 모든 것이 실패하면 SVG 폴백 사용
     if (!image) {
       const domain = new URL(url).hostname
       image = `data:image/svg+xml;base64,${Buffer.from(`
