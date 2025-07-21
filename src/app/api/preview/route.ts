@@ -35,11 +35,43 @@ export async function GET(request: NextRequest) {
 
     let image = $('meta[property="og:image"]').attr('content') ||
                 $('meta[name="twitter:image"]').attr('content') ||
+                $('meta[property="og:image:url"]').attr('content') ||
+                $('meta[name="twitter:image:src"]').attr('content') ||
+                $('link[rel="image_src"]').attr('href') ||
+                $('img[src]').first().attr('src') ||
                 ''
 
+    // Handle relative URLs
     if (image && !image.startsWith('http')) {
-      const baseUrl = new URL(url).origin
-      image = new URL(image, baseUrl).href
+      try {
+        const baseUrl = new URL(url).origin
+        image = new URL(image, baseUrl).href
+      } catch (e) {
+        image = ''
+      }
+    }
+
+    // Validate image URL and add proxy for CORS issues
+    if (image) {
+      try {
+        new URL(image)
+        // Use a simple image proxy to handle CORS issues
+        const imageProxy = `https://images.weserv.nl/?url=${encodeURIComponent(image)}&w=400&h=200&fit=cover&we`
+        image = imageProxy
+      } catch (e) {
+        image = ''
+      }
+    }
+
+    // If no image found, generate a screenshot as fallback
+    if (!image) {
+      try {
+        // Use a free screenshot service as backup
+        const screenshotUrl = `https://api.screenshotmachine.com/?key=demo&url=${encodeURIComponent(url)}&dimension=1024x768&device=desktop&format=png`
+        image = screenshotUrl
+      } catch (e) {
+        // Keep image as null if screenshot service fails
+      }
     }
 
     return NextResponse.json({

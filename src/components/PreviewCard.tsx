@@ -18,6 +18,7 @@ export default function PreviewCard({ url }: PreviewCardProps) {
   const [preview, setPreview] = useState<PreviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   useEffect(() => {
     const fetchPreview = async () => {
@@ -64,20 +65,25 @@ export default function PreviewCard({ url }: PreviewCardProps) {
       rel="noopener noreferrer"
       className="block border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
     >
-      {preview.image && (
+      {preview.image && !imageError ? (
         <div className="relative h-48 w-full">
           <Image
             src={preview.image}
             alt={preview.title}
             fill
             className="object-cover"
-            onError={() => setError(true)}
+            onError={() => setImageError(true)}
+            unoptimized
           />
         </div>
-      )}
-      {!preview.image && (
+      ) : (
         <div className="h-48 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-          <div className="text-4xl text-gray-400">🔗</div>
+          <div className="text-center">
+            <div className="text-4xl mb-2">🔗</div>
+            <div className="text-xs text-gray-500 px-4">
+              {new URL(url).hostname}
+            </div>
+          </div>
         </div>
       )}
       <div className="p-4">
