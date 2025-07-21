@@ -59,90 +59,95 @@ export async function GET(request: NextRequest) {
                        $('meta[name="description"]').attr('content') ||
                        'No description available'
 
-    // 고품질 이미지만 검색 (favicon 제외)
-    let originalImage = $('meta[property="og:image"]').attr('content') ||
-                       $('meta[property="og:image:url"]').attr('content') ||
-                       $('meta[property="og:image:secure_url"]').attr('content') ||
-                       $('meta[name="twitter:image"]').attr('content') ||
-                       $('meta[name="twitter:image:src"]').attr('content') ||
-                       $('meta[property="twitter:image"]').attr('content') ||
-                       $('meta[name="thumbnail"]').attr('content') ||
-                       $('link[rel="image_src"]').attr('href') ||
-                       // 첫 번째 큰 이미지만 찾기 (favicon 제외)
-                       $('img[src]:not([src*="favicon"]):not([src*="icon"])').first().attr('src') ||
-                       ''
-
-    // Handle relative URLs
-    if (originalImage && !originalImage.startsWith('http')) {
-      try {
-        const baseUrl = new URL(url).origin
-        originalImage = new URL(originalImage, baseUrl).href
-      } catch (e) {
-        originalImage = ''
-      }
-    }
-
-    console.log('Found original image:', originalImage)
-
     let image = null
+    const domain = new URL(url).hostname
     
-    // 원본 이미지가 있고 favicon이 아닌 경우에만 사용
-    if (originalImage && !originalImage.includes('favicon')) {
-      const proxyServices = [
-        // 더 안정적인 이미지 프록시들
-        `https://images.weserv.nl/?url=${encodeURIComponent(originalImage)}&w=400&h=200&fit=cover&output=png`,
-        `https://wsrv.nl/?url=${encodeURIComponent(originalImage)}&w=400&h=200&fit=cover`,
-        // 직접 원본 이미지 (CORS가 허용되는 경우)
-        originalImage
-      ]
+    // 1. 스크린샷을 최우선으로 시도 (실제 웹사이트 모습)
+    console.log('🔍 Trying screenshot services first for:', domain)
+    const screenshotServices = [
+      // 무료 스크린샷 서비스들
+      `https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?${url}`,
+      `https://image.thum.io/get/width/400/crop/600/png/${url}`,
+      `https://api.thumbnail.ws/api/7b9e60e2b8c34ac5a1fadb4e49b8c38c/thumbnail/get?url=${encodeURIComponent(url)}&width=400&height=200`,
+    ]
+    
+    for (const serviceUrl of screenshotServices) {
+      try {
+        console.log('🔍 Trying screenshot service:', serviceUrl)
+        const isValid = await isValidImageUrl(serviceUrl)
+        if (isValid) {
+          image = serviceUrl
+          console.log('📸 Using screenshot service:', serviceUrl)
+          break
+        }
+      } catch (error) {
+        console.log('❌ Screenshot service failed:', serviceUrl, error)
+        continue
+      }
+    }
+
+    // 2. 스크린샷이 실패하면 고품질 원본 이미지 시도 (favicon 제외)
+    if (!image) {
+      console.log('🖼️ Screenshot failed, trying original images')
       
-      // 각 프록시 서비스를 순서대로 시도
-      for (const proxyUrl of proxyServices) {
+      const originalImage = $('meta[property="og:image"]').attr('content') ||
+                           $('meta[property="og:image:url"]').attr('content') ||
+                           $('meta[property="og:image:secure_url"]').attr('content') ||
+                           $('meta[name="twitter:image"]').attr('content') ||
+                           $('meta[name="twitter:image:src"]').attr('content') ||
+                           $('meta[property="twitter:image"]').attr('content') ||
+                           $('meta[name="thumbnail"]').attr('content') ||
+                           $('link[rel="image_src"]').attr('href') ||
+                           // 첫 번째 큰 이미지만 찾기 (favicon 제외)
+                           $('img[src]:not([src*="favicon"]):not([src*="icon"])').first().attr('src') ||
+                           ''
+
+      let fullOriginalUrl = originalImage
+      
+      // Handle relative URLs
+      if (originalImage && !originalImage.startsWith('http')) {
         try {
-          console.log('Trying proxy:', proxyUrl)
-          const isValid = await isValidImageUrl(proxyUrl)
-          if (isValid) {
-            image = proxyUrl
-            console.log('✅ Using working proxy:', proxyUrl)
-            break
+          const baseUrl = new URL(url).origin
+          fullOriginalUrl = new URL(originalImage, baseUrl).href
+        } catch (e) {
+          fullOriginalUrl = ''
+        }
+      }
+
+      console.log('Found original image:', fullOriginalUrl)
+
+      // 원본 이미지가 있고 favicon이 아닌 경우에만 사용
+      if (fullOriginalUrl && !fullOriginalUrl.includes('favicon')) {
+        const proxyServices = [
+          // 더 안정적인 이미지 프록시들
+          `https://images.weserv.nl/?url=${encodeURIComponent(fullOriginalUrl)}&w=400&h=200&fit=cover&output=png`,
+          `https://wsrv.nl/?url=${encodeURIComponent(fullOriginalUrl)}&w=400&h=200&fit=cover`,
+          // 직접 원본 이미지 (CORS가 허용되는 경우)
+          fullOriginalUrl
+        ]
+        
+        // 각 프록시 서비스를 순서대로 시도
+        for (const proxyUrl of proxyServices) {
+          try {
+            console.log('Trying proxy:', proxyUrl)
+            const isValid = await isValidImageUrl(proxyUrl)
+            if (isValid) {
+              image = proxyUrl
+              console.log('✅ Using working proxy:', proxyUrl)
+              break
+            }
+          } catch (error) {
+            console.log('❌ Proxy failed:', proxyUrl, error)
+            continue
           }
-        } catch (error) {
-          console.log('❌ Proxy failed:', proxyUrl, error)
-          continue
         }
       }
     }
 
-    // 원본 이미지가 없거나 favicon만 있는 경우 스크린샷 우선 사용
+    // 3. 원본 이미지도 실패하면 favicon 시도 (최후의 수단)
     if (!image) {
-      const domain = new URL(url).hostname
+      console.log('🎯 Trying favicon as last resort')
       
-      // 스크린샷 서비스들을 우선적으로 시도
-      const screenshotServices = [
-        // 무료 스크린샷 서비스들
-        `https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?${url}`,
-        `https://image.thum.io/get/width/400/crop/600/png/${url}`,
-        `https://api.thumbnail.ws/api/7b9e60e2b8c34ac5a1fadb4e49b8c38c/thumbnail/get?url=${encodeURIComponent(url)}&width=400&height=200`,
-      ]
-      
-      for (const serviceUrl of screenshotServices) {
-        try {
-          console.log('🔍 Trying screenshot service:', serviceUrl)
-          const isValid = await isValidImageUrl(serviceUrl)
-          if (isValid) {
-            image = serviceUrl
-            console.log('📸 Using screenshot service:', serviceUrl)
-            break
-          }
-        } catch (error) {
-          console.log('❌ Screenshot service failed:', serviceUrl, error)
-          continue
-        }
-      }
-    }
-
-    // 스크린샷도 실패하면 favicon 시도 (최후의 수단)
-    if (!image) {
       const faviconImage = $('link[rel="apple-touch-icon"]').attr('href') ||
                           $('link[rel="icon"]').attr('href') ||
                           $('link[rel="shortcut icon"]').attr('href') ||
@@ -174,9 +179,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 모든 것이 실패하면 SVG 폴백 사용
+    // 4. 모든 것이 실패하면 SVG 폴백 사용
     if (!image) {
-      const domain = new URL(url).hostname
       image = `data:image/svg+xml;base64,${Buffer.from(`
         <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
           <rect width="400" height="200" fill="#4F46E5"/>
