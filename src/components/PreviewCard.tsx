@@ -25,6 +25,7 @@ export default function PreviewCard({ url }: PreviewCardProps) {
       try {
         const response = await fetch(`/api/preview?url=${encodeURIComponent(url)}`)
         const data = await response.json()
+        console.log('Preview data received:', data)
         setPreview(data)
         setError(false)
       } catch (err) {
@@ -37,6 +38,11 @@ export default function PreviewCard({ url }: PreviewCardProps) {
 
     fetchPreview()
   }, [url])
+
+  const handleImageError = () => {
+    console.log('Image failed to load, using fallback')
+    setImageError(true)
+  }
 
   if (loading) {
     return (
@@ -66,14 +72,15 @@ export default function PreviewCard({ url }: PreviewCardProps) {
       className="block border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
     >
       {preview.image && !imageError ? (
-        <div className="relative h-48 w-full">
+        <div className="relative h-48 w-full bg-gray-100">
           <Image
             src={preview.image}
             alt={preview.title}
             fill
             className="object-cover"
-            onError={() => setImageError(true)}
+            onError={handleImageError}
             unoptimized
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       ) : (
@@ -96,6 +103,11 @@ export default function PreviewCard({ url }: PreviewCardProps) {
         <div className="text-xs text-blue-600 truncate">
           {new URL(url).hostname}
         </div>
+        {process.env.NODE_ENV === 'development' && preview.image && (
+          <div className="text-xs text-gray-400 mt-2 truncate">
+            Debug: {preview.image}
+          </div>
+        )}
       </div>
     </a>
   )
