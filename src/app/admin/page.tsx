@@ -109,7 +109,7 @@ export default function AdminPage() {
               </li>
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2">2.</span>
-                We'll automatically fetch the preview information (title, description, image)
+                We&apos;ll automatically fetch the preview information (title, description, image)
               </li>
               <li className="flex items-start">
                 <span className="text-blue-500 mr-2">3.</span>
