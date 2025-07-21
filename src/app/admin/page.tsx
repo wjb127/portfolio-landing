@@ -1,121 +1,216 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
+
+interface PortfolioLink {
+  id: number
+  url: string
+  created_at: string
+}
 
 export default function AdminPage() {
-  const [url, setUrl] = useState('')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [password, setPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [links, setLinks] = useState<PortfolioLink[]>([])
+  const [newUrl, setNewUrl] = useState('')
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const ADMIN_PASSWORD = 'Simon2025!'
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!url.trim()) {
-      setMessage('Please enter a URL')
-      return
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true)
+      setPasswordError('')
+      fetchLinks()
+    } else {
+      setPasswordError('잘못된 비밀번호입니다.')
+      setPassword('')
     }
+  }
 
-    try {
-      new URL(url)
-    } catch {
-      setMessage('Please enter a valid URL')
-      return
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchLinks()
     }
+  }, [isAuthenticated])
+
+  const fetchLinks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('portfolio_links')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      setLinks(data || [])
+    } catch (error) {
+      console.error('Error fetching links:', error)
+    }
+  }
+
+  const addLink = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newUrl.trim()) return
 
     setLoading(true)
-    setMessage('')
-
     try {
       const { error } = await supabase
         .from('portfolio_links')
-        .insert([{ url: url.trim() }])
+        .insert([{ url: newUrl.trim() }])
 
       if (error) throw error
-
-      setUrl('')
-      setMessage('Link added successfully!')
+      
+      setNewUrl('')
+      fetchLinks()
     } catch (error) {
       console.error('Error adding link:', error)
-      setMessage('Failed to add link. Please try again.')
+      alert('Failed to add link')
     } finally {
       setLoading(false)
     }
   }
 
+  const deleteLink = async (id: number) => {
+    try {
+      const { error } = await supabase
+        .from('portfolio_links')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+      
+      fetchLinks()
+    } catch (error) {
+      console.error('Error deleting link:', error)
+      alert('Failed to delete link')
+    }
+  }
+
+  // 비밀번호 인증 화면
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-8">
+          <div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Admin Access
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              관리자 비밀번호를 입력하세요
+            </p>
+          </div>
+          <form className="mt-8 space-y-6" onSubmit={handlePasswordSubmit}>
+            <div>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder="비밀번호"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            {passwordError && (
+              <div className="text-red-600 text-sm text-center">
+                {passwordError}
+              </div>
+            )}
+            <div>
+              <button
+                type="submit"
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                로그인
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  // 인증 후 관리자 페이지
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Add Portfolio Link</h1>
-            <Link
-              href="/"
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            <h1 className="text-3xl font-bold text-gray-900">Portfolio Admin</h1>
+            <button
+              onClick={() => setIsAuthenticated(false)}
+              className="text-sm text-gray-600 hover:text-gray-900"
             >
-              ← Back to Portfolio
-            </Link>
+              로그아웃
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm border p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-2">
-                Portfolio URL
-              </label>
-              <input
-                type="url"
-                id="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com/your-project"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                disabled={loading}
-              />
-              <p className="mt-2 text-sm text-gray-500">
-                Enter the URL of your portfolio project, website, or any link you want to showcase
-              </p>
-            </div>
-
-            {message && (
-              <div className={`p-3 rounded-md text-sm ${
-                message.includes('success') 
-                  ? 'bg-green-50 text-green-700 border border-green-200' 
-                  : 'bg-red-50 text-red-700 border border-red-200'
-              }`}>
-                {message}
-              </div>
-            )}
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Add new link form */}
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Add New Portfolio Link</h2>
+          <form onSubmit={addLink} className="flex gap-4">
+            <input
+              type="url"
+              placeholder="https://example.com"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            />
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-4 rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-6 py-2 rounded-md font-medium transition-colors"
             >
-              {loading ? 'Adding Link...' : 'Add Portfolio Link'}
+              {loading ? 'Adding...' : 'Add Link'}
             </button>
           </form>
+        </div>
 
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">How it works</h3>
-            <ul className="text-sm text-gray-600 space-y-2">
-              <li className="flex items-start">
-                <span className="text-blue-500 mr-2">1.</span>
-                Enter the URL of your project or portfolio piece
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-500 mr-2">2.</span>
-                We&apos;ll automatically fetch the preview information (title, description, image)
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-500 mr-2">3.</span>
-                Your link will appear on the main portfolio page as a beautiful card
-              </li>
-            </ul>
+        {/* Links list */}
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-medium text-gray-900">Portfolio Links ({links.length})</h2>
+          </div>
+          <div className="divide-y divide-gray-200">
+            {links.map((link) => (
+              <div key={link.id} className="px-6 py-4 flex items-center justify-between">
+                <div className="flex-1">
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {link.url}
+                  </a>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Added: {new Date(link.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => deleteLink(link.id)}
+                  className="ml-4 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+            {links.length === 0 && (
+              <div className="px-6 py-8 text-center text-gray-500">
+                No portfolio links yet. Add your first link above.
+              </div>
+            )}
           </div>
         </div>
       </main>

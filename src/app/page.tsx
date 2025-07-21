@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import PreviewCard from '@/components/PreviewCard'
-import Link from 'next/link'
 
 interface PortfolioLink {
   id: number
@@ -39,14 +38,8 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-center items-center">
             <h1 className="text-3xl font-bold text-gray-900">My Portfolio</h1>
-            <Link
-              href="/admin"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium transition-colors"
-            >
-              Add Link
-            </Link>
           </div>
         </div>
       </header>
@@ -67,13 +60,7 @@ export default function Home() {
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📝</div>
             <h3 className="text-xl font-medium text-gray-900 mb-2">No portfolio links yet</h3>
-            <p className="text-gray-500 mb-6">Start by adding your first portfolio link</p>
-            <Link
-              href="/admin"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium inline-block transition-colors"
-            >
-              Add Your First Link
-            </Link>
+            <p className="text-gray-500 mb-6">Portfolio links will appear here</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

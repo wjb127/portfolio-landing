@@ -62,13 +62,13 @@ export async function GET(request: NextRequest) {
     let image = null
     const domain = new URL(url).hostname
     
-    // 1. 스크린샷을 최우선으로 시도 (실제 웹사이트 모습)
+    // 1. 스크린샷을 최우선으로 시도 (실제 웹사이트 모습) - 더 큰 크기로
     console.log('🔍 Trying screenshot services first for:', domain)
     const screenshotServices = [
-      // 무료 스크린샷 서비스들
-      `https://mini.s-shot.ru/1024x768/JPEG/1024/Z100/?${url}`,
-      `https://image.thum.io/get/width/400/crop/600/png/${url}`,
-      `https://api.thumbnail.ws/api/7b9e60e2b8c34ac5a1fadb4e49b8c38c/thumbnail/get?url=${encodeURIComponent(url)}&width=400&height=200`,
+      // 더 큰 크기의 스크린샷 서비스들
+      `https://mini.s-shot.ru/1200x800/JPEG/1200/Z100/?${url}`,
+      `https://image.thum.io/get/width/500/crop/700/png/${url}`,
+      `https://api.thumbnail.ws/api/7b9e60e2b8c34ac5a1fadb4e49b8c38c/thumbnail/get?url=${encodeURIComponent(url)}&width=500&height=300`,
     ]
     
     for (const serviceUrl of screenshotServices) {
@@ -116,12 +116,12 @@ export async function GET(request: NextRequest) {
 
       console.log('Found original image:', fullOriginalUrl)
 
-      // 원본 이미지가 있고 favicon이 아닌 경우에만 사용
+      // 원본 이미지가 있고 favicon이 아닌 경우에만 사용 - 더 큰 크기로
       if (fullOriginalUrl && !fullOriginalUrl.includes('favicon')) {
         const proxyServices = [
-          // 더 안정적인 이미지 프록시들
-          `https://images.weserv.nl/?url=${encodeURIComponent(fullOriginalUrl)}&w=400&h=200&fit=cover&output=png`,
-          `https://wsrv.nl/?url=${encodeURIComponent(fullOriginalUrl)}&w=400&h=200&fit=cover`,
+          // 더 큰 크기의 이미지 프록시들
+          `https://images.weserv.nl/?url=${encodeURIComponent(fullOriginalUrl)}&w=500&h=300&fit=cover&output=png`,
+          `https://wsrv.nl/?url=${encodeURIComponent(fullOriginalUrl)}&w=500&h=300&fit=cover`,
           // 직접 원본 이미지 (CORS가 허용되는 경우)
           fullOriginalUrl
         ]
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
         
         if (fullFaviconUrl) {
           try {
-            const faviconProxy = `https://images.weserv.nl/?url=${encodeURIComponent(fullFaviconUrl)}&w=400&h=200&fit=cover&output=png`
+            const faviconProxy = `https://images.weserv.nl/?url=${encodeURIComponent(fullFaviconUrl)}&w=500&h=300&fit=cover&output=png`
             const isValid = await isValidImageUrl(faviconProxy)
             if (isValid) {
               image = faviconProxy
@@ -179,12 +179,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 4. 모든 것이 실패하면 SVG 폴백 사용
+    // 4. 모든 것이 실패하면 SVG 폴백 사용 - 더 큰 크기로
     if (!image) {
       image = `data:image/svg+xml;base64,${Buffer.from(`
-        <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
-          <rect width="400" height="200" fill="#4F46E5"/>
-          <text x="200" y="100" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" dominant-baseline="middle">${domain}</text>
+        <svg width="500" height="300" xmlns="http://www.w3.org/2000/svg">
+          <rect width="500" height="300" fill="#4F46E5"/>
+          <text x="250" y="150" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" dominant-baseline="middle">${domain}</text>
         </svg>
       `).toString('base64')}`
       console.log('🎨 Using generated SVG for:', domain)
@@ -207,10 +207,10 @@ export async function GET(request: NextRequest) {
     try {
       const domain = new URL(url).hostname
       const svgImage = `data:image/svg+xml;base64,${Buffer.from(`
-        <svg width="400" height="200" xmlns="http://www.w3.org/2000/svg">
-          <rect width="400" height="200" fill="#6B7280"/>
-          <text x="200" y="90" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle" dominant-baseline="middle">${domain}</text>
-          <text x="200" y="120" font-family="Arial, sans-serif" font-size="12" fill="#D1D5DB" text-anchor="middle" dominant-baseline="middle">Preview not available</text>
+        <svg width="500" height="300" xmlns="http://www.w3.org/2000/svg">
+          <rect width="500" height="300" fill="#6B7280"/>
+          <text x="250" y="130" font-family="Arial, sans-serif" font-size="16" fill="white" text-anchor="middle" dominant-baseline="middle">${domain}</text>
+          <text x="250" y="170" font-family="Arial, sans-serif" font-size="14" fill="#D1D5DB" text-anchor="middle" dominant-baseline="middle">Preview not available</text>
         </svg>
       `).toString('base64')}`
       
