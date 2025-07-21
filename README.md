@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio Landing Page
 
-## Getting Started
+A modern portfolio website built with Next.js 15, Supabase, and Tailwind CSS. Display your portfolio links with beautiful URL previews featuring automatic thumbnail, title, and description extraction.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- 🔗 Add portfolio links via admin interface
+- 🖼️ Automatic URL preview generation with OG tags
+- 📱 Fully responsive design
+- ⚡ Built with Next.js 15 App Router
+- 🗄️ Supabase for database management
+- 🎨 Beautiful UI with Tailwind CSS
+
+## Quick Start
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Set up Supabase**
+   - Create a new project at [Supabase](https://supabase.com)
+   - Run the SQL commands in `supabase-schema.sql` to create the database schema
+   - Get your project URL and anon key
+
+3. **Configure environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Fill in your Supabase credentials:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   ```
+
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+5. **Open your browser**
+   Visit [http://localhost:3000](http://localhost:3000) to see your portfolio!
+
+## Usage
+
+### Adding Portfolio Links
+1. Navigate to `/admin` or click the "Add Link" button
+2. Enter the URL of your portfolio project
+3. The system will automatically fetch preview information
+4. Your link will appear on the main page as a beautiful card
+
+### Database Schema
+The app uses a simple `portfolio_links` table with:
+- `id`: Primary key
+- `url`: The portfolio URL
+- `created_at`: Timestamp
+
+## Deployment
+
+### Deploy to Vercel
+1. Push your code to GitHub
+2. Connect your GitHub repository to Vercel
+3. Add your environment variables in Vercel dashboard
+4. Deploy!
+
+### Deploy to Other Platforms
+This is a standard Next.js app and can be deployed to any platform that supports Node.js.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Database**: Supabase (PostgreSQL)
+- **Styling**: Tailwind CSS
+- **Language**: TypeScript
+- **Web Scraping**: Cheerio for OG tag extraction
+- **Deployment**: Vercel (recommended)
+
+## API Routes
+
+### `/api/preview`
+Fetches Open Graph metadata for URL previews.
+
+**Query Parameters:**
+- `url`: The URL to fetch preview data for
+
+**Response:**
+```json
+{
+  "title": "Page Title",
+  "description": "Page Description",
+  "image": "https://example.com/image.jpg",
+  "url": "https://example.com"
+}
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
