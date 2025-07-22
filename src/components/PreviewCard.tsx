@@ -48,20 +48,39 @@ export default function PreviewCard({ url }: PreviewCardProps) {
 
   if (loading) {
     return (
-      <div className="border border-gray-200 rounded-lg p-6 bg-white shadow-sm animate-pulse">
-        <div className="h-48 bg-gray-200 rounded-md mb-4"></div>
-        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded mb-2"></div>
-        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+      <div className="relative overflow-hidden">
+        <div className="h-56 bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse"></div>
+        <div className="p-6">
+          <div className="h-6 bg-gray-200 rounded-lg mb-3 animate-pulse"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
+          </div>
+          <div className="mt-4 h-4 bg-blue-100 rounded w-1/3 animate-pulse"></div>
+        </div>
       </div>
     )
   }
 
   if (error || !preview) {
     return (
-      <div className="border border-red-200 rounded-lg p-6 bg-red-50 shadow-sm">
-        <div className="text-red-600 font-medium">Failed to load preview</div>
-        <div className="text-sm text-red-500 mt-2">Could not fetch data for: {url}</div>
+      <div className="relative overflow-hidden">
+        <div className="h-56 bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+          <div className="text-center">
+            <svg className="w-12 h-12 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div className="text-red-600 font-medium">로딩 실패</div>
+          </div>
+        </div>
+        <div className="p-6">
+          <h3 className="font-bold text-lg text-red-700 mb-2">Preview 로딩 실패</h3>
+          <p className="text-red-600 text-sm mb-3">데이터를 불러올 수 없습니다.</p>
+          <div className="text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+            {url}
+          </div>
+        </div>
       </div>
     )
   }
@@ -71,45 +90,81 @@ export default function PreviewCard({ url }: PreviewCardProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
+      className="block relative overflow-hidden group cursor-pointer"
     >
-      {preview.image && !imageError ? (
-        <div className="relative h-48 w-full bg-gray-100">
-          <Image
-            src={preview.image}
-            alt={preview.title}
-            fill
-            className="object-cover"
-            onError={handleImageError}
-            unoptimized
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            // 캐시 버스터로 이미지 새로고침 강제
-            key={preview.image}
-          />
-        </div>
-      ) : (
-        <div className="h-48 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-4xl mb-2">🔗</div>
-            <div className="text-xs text-gray-500 px-4">
-              {new URL(url).hostname}
+      {/* Image Section */}
+      <div className="relative h-56 w-full overflow-hidden">
+        {preview.image && !imageError ? (
+          <>
+            <Image
+              src={preview.image}
+              alt={preview.title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={handleImageError}
+              unoptimized
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              key={preview.image}
+            />
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </>
+        ) : (
+          <div className="h-full bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 flex items-center justify-center relative overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.4'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              }}></div>
+            </div>
+            <div className="text-center z-10">
+              <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <div className="text-sm font-medium text-gray-600 px-4">
+                {new URL(url).hostname}
+              </div>
             </div>
           </div>
+        )}
+        
+        {/* Status badge */}
+        <div className="absolute top-4 right-4">
+          <div className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-green-700 border border-green-200">
+            <span className="w-2 h-2 bg-green-500 rounded-full inline-block mr-1"></span>
+            Live
+          </div>
         </div>
-      )}
-      <div className="p-4">
-        <h3 className="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">
+      </div>
+
+      {/* Content Section */}
+      <div className="p-6">
+        <h3 className="font-bold text-xl text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors duration-200">
           {preview.title}
         </h3>
-        <p className="text-gray-600 text-sm line-clamp-3 mb-3">
+        <p className="text-gray-600 text-sm line-clamp-3 mb-4 leading-relaxed">
           {preview.description}
         </p>
-        <div className="text-xs text-blue-600 truncate">
-          {new URL(url).hostname}
+        
+        {/* URL and action */}
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full truncate max-w-[70%]">
+            {new URL(url).hostname}
+          </div>
+          <div className="flex items-center text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="mr-1">방문</span>
+            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </div>
         </div>
+
+        {/* Debug info for development */}
         {process.env.NODE_ENV === 'development' && preview.image && (
-          <div className="text-xs text-gray-400 mt-2 truncate">
-            Debug: {preview.image}
+          <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-500 break-all">
+            <strong>Debug:</strong> {preview.image}
           </div>
         )}
       </div>
